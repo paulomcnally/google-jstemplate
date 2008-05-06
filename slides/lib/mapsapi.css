@@ -1,0 +1,79 @@
+.background { 
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.shade { 
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  background: url(white.gif);
+  opacity: 0.6;
+  filter: alpha(opacity=60);
+}
+
+.slides, .header, .footer, #navigator { 
+  z-index: 3;
+}
+
+.float { 
+  display: none;
+  position: absolute;
+  z-index: 100;
+  bottom: 100px;
+  left: 100px;
+}
+
+.float .content { 
+  padding: 0.5em;
+  font-size: 20px;
+}
+
+.item { 
+  margin-top: 0.5em;
+}
+
+/* example code */
+.comment { 
+  color: red;
+}
+
+.string { 
+  color: green;
+}
+
+.keyword { 
+  color: magenta;
+}
+
+.class { 
+  color: green;
+}
+
+.example { 
+  border: 1px solid grey;
+  font-family: monospace;
+}
+
+.comment .keyword, .comment .class { 
+  color: red;
+}
+
+.string .keyword, .string .class { 
+  color: green;
+}
+
+span.markup { 
+  color: #cc77cc;
+}
+
+span.tag { 
+  color: #44cc44;
+}
+
+span.val { 
+  color: #7777cc;
+}

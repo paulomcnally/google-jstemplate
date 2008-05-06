@@ -1,0 +1,531 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Client side template processing for Ajax applications</title>
+    <script src="lib/slides.js" type="text/javascript"></script>
+    <script src="lib/jslib.js" type="text/javascript"></script>
+    <script src="lib/state.js" type="text/javascript"></script>
+    <script src="lib/state_util.js" type="text/javascript"></script>
+    <link href="lib/slides.css" rel="stylesheet" type="text/css"
+          media="screen"/>
+    <link href="lib/slides-print.css" rel="stylesheet" type="text/css"
+          media="print"/>
+
+    <script src="lib/prettify.js"></script>
+    <link href="lib/prettify.css" rel="stylesheet" type="text/css"/>    
+
+    <script src="jstemplate/util.js" type="text/javascript"></script>
+    <script src="jstemplate/jsevalcontext.js" type="text/javascript"></script>
+    <script src="jstemplate/jstemplate.js" type="text/javascript"></script>
+    <script src="jstemplate/jstemplate_example.js"
+    type="text/javascript"></script>
+    
+    <style>
+      table.jsexample {
+      border-collapse: collapse;
+      padding: 0px;
+      margin: 1px;
+      }
+
+      .jsexample td, .jsexample th {
+      border: 1px solid silver;
+      padding: 0;
+      }
+
+      .jsexample textarea {
+      width: 98%;
+      height: 95%;
+      border: none;
+      padding: 0.1em;
+      font-size: 100%;
+      }
+    </style>
+  </head>
+
+  <body onload="initslides();prettyPrint();jsinit();">
+
+    <div class="header">
+      <div id="navigator"></div>
+    </div>
+    
+    <div id="slides" class="slides">
+      <div class="slide print title" group="title">
+        <h1>Simple and robust browser side template processing for
+        Ajax based web applications</h1>
+
+        <div class="bottom" style="bottom:20px">
+          <h2 class="author">Steffen Meschkat, Google</h2>
+          <h2 class="venue">WWW 2008, April 21-25, Beijing, China</h2>
+        </div>
+      </div>
+      
+      <div class="slide print" group="content" steps="5">
+        <h1>Why another template processing idiom?</h1>
+        <div step="1">Template processing is the staple pattern for
+        separation of data and presentation in web applications.</div>
+        <div step="2">Works on one page at a time &mdash; inadequate
+        for incremental, asynchronous page updates typical of Ajax
+        applications. Therefore:</div>
+        <ul step="2">
+          <li><b>Incremental processing</b> &mdash; every processing
+          operation produces valid output.</li>
+          <li><b>Differential processing</b> &mdash; output text is
+          again a template.</li>
+        </ul>
+        <div step="3">Fix other undesirable properties of standard
+        template processing:</div>
+        <ul step="3">
+          <li><b>Wellformed</b> output guaranteed.</li>
+          <li><b>Escaped</b> by default.</li>
+          <li><b>Intelligible</b> templates &mdash; input template is valid
+          output.</li>
+        </ul>
+        <div step="4">And, of course:</div>
+        <ul step="4">
+          <li>Pure javascript, HTML, browser side processing.</li>
+        </ul>
+      </div>
+
+      <div class="slide noprint" group="intermission">
+        <div class="banner">
+          <div class="semiopaque"></div>
+          <div class="content">
+            This looks good in theory. But does it work in practice?
+          </div>
+        </div>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Template processing input</h1>
+
+        <div class="snippet">
+          <div class="label">template</div>
+          <pre class="prettyprint">
+&lt;div id="t">
+  &lt;div jsselect="items" jscontent="$this">&lt;/div>
+&lt;/div></pre>
+        </div>
+
+        <div class="snippet">
+          <div class="label">data</div>
+          <pre class="prettyprint">
+var input = {
+  items: ['A', 'B', 'C']
+};</pre>
+        </div>
+
+        <div class="snippet">
+          <div class="label">API</div>
+          <pre class="prettyprint">
+var output = jstGetTemplate('t');
+jstProcess(new JsExprContext(input), output);</pre>
+        </div>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Template processing output</h1>
+        <div class="snippet">
+          <div class="label">output</div>
+          <pre class="prettyprint">
+&lt;div>
+  &lt;div jsinstance="0"
+       jsselect="items" jscontent="$this">A&lt;/div>
+  &lt;div jsinstance="1"
+       jsselect="items" jscontent="$this">B&lt;/div>
+  &lt;div jsinstance="*2"
+       jsselect="items" jscontent="$this">C&lt;/div>
+&lt;/div></pre>
+        </div>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Differential processing</h1>
+
+        <div class="snippet">
+          <div class="label">data</div>
+          <pre class="prettyprint">
+var input = {
+  items: ['A', 'BC']
+};</pre>
+        </div>
+
+        <div class="snippet">
+          <div class="label">output</div>
+          <pre class="prettyprint">
+&lt;div>
+  &lt;div jsinstance="0"
+       jsselect="items" jscontent="$this">A&lt;/div>
+  &lt;div jsinstance="*1"
+       jsselect="items" jscontent="$this">BC&lt;/div>
+&lt;/div></pre>
+        </div>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Differential processing, again</h1>
+
+        <div class="snippet">
+          <div class="label">data</div>
+          <pre class="prettyprint">
+var input = {
+  items: []
+};</pre>
+        </div>
+
+        <div class="snippet">
+          <div class="label">output</div>
+          <pre class="prettyprint">
+&lt;div>
+  &lt;div jsinstance="*0" jsselect="items"
+       style="display: none" jscontent="$this">A&lt;/div>
+&lt;/div></pre>
+        </div>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Template composition</h1>
+
+        <div class="snippet">
+          <div class="label">template</div>
+          <pre class="prettyprint">
+&lt;div id="zebralist">
+  &lt;div jsselect="items">
+    &lt;div jsdisplay="$index % 2 == 0"
+         style="background-color:#f0fff0"
+         jscontent="$this">&lt;/div>
+    &lt;div jsdisplay="$index % 2 != 0"
+         style="background-color:#ffffff"
+         jscontent="$this">&lt;/div>
+  &lt;/div>
+&lt;/div></pre>
+        </div>
+
+        <div class="snippet">
+          <div class="label">template</div>
+          <pre class="prettyprint">
+&lt;div id="t1">
+  &lt;div transclude="zebralist">&lt;/div>
+&lt;/div></pre>
+        </div>
+      </div>
+
+      <div class="slide" group="content">
+        <table class="jsexample" style="width:99%;height:90%">
+          <tr>
+            <td style="height:64%">
+              <textarea
+               id="template"
+               onkeypress="event.stopPropagation()"
+               onkeyup="event.stopPropagation()"
+               onkeydown="event.stopPropagation()"
+              ></textarea>
+            </td>
+            <td rowspan="2" style="width:30%;padding:1em" id="out">
+            </td>
+          </tr>
+          <tr>
+            <td style="height:30%">
+              <textarea
+               onkeypress="event.stopPropagation()"
+               onkeyup="event.stopPropagation()"
+               onkeydown="event.stopPropagation()"
+               id="js">{items: ['A', 'B', 'C']}</textarea>
+            </td>
+          </tr>
+        </table>
+
+        <a href="javascript:jstest(false)">process</a>
+        <a href="javascript:jstest(true)">reprocess</a>
+
+        <div style="display:none" id="tc"><div id="zebralist">
+  <div jsselect="items">
+    <div jsdisplay="$index%2==0"
+         style="background-color:#f0fff0"
+         jscontent="$this"></div>
+    <div jsdisplay="$index%2!=0"
+         style="background-color:#ffffff"
+         jscontent="$this"></div>
+  </div>
+</div>
+
+<div id="t">
+  <div transclude="zebralist"></div>
+</div>
+        </div>
+      </div>
+
+
+      <div class="slide print" group="content">
+        <h1>Attributes summary</h1>
+        <ul>
+          <li><code>jsselect="<em>expr</em>"</code> &mdash; iteration,
+          change of local evaluation context</li>
+          <li><code>jsdisplay="<em>expr</em>"</code> &mdash;
+          conditional display</li>
+          <li><code>jscontent="<em>expr</em>"</code> &mdash;
+          content of current DOM node</li>
+          <li><code>jsvalues="<em>target</em>:<em>expr</em>;..."</code>
+          &mdash; set values in current context</li>
+          <li><code>jsvars="<em>var</em>:<em>expr</em>;..."</code>
+          &mdash; set variables with names that don't start with
+          <code>$</code></li>
+          <li><code>jseval="<em>expr</em>"</code> &mdash; evaluates
+          expression on current DOM node</li>
+          <li><code>transclude="<em>id</em>"</code> &mdash;
+          transcludes an HTML fragment by id (no expression here)</li>
+        </ul>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Target summary</h1>
+        <div>Selecting which values to set in current context:</div>
+        <ul>
+          <li><code>jsvalues="<em>attr</em>:<em>expr</em>;..."</code>
+          &mdash; set attribute values</li>
+          <li><code>jsvalues=".<em>prop</em>:<em>expr</em>;..."</code>
+          &mdash; set js properties</li>
+          <li><code>jsvalues=".<em>prop</em>.<em>subprop</em>:<em>expr</em>;..."</code>
+          &mdash; set nested js properties (e.g., on
+          <code>.style</code>)</li>
+          <li><code>jsvalues="$<em>var</em>:<em>expr</em>;..."</code>
+          &mdash; set variables in local context</li>
+        </ul>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Expression summary</h1>
+        <ul>
+          <li><code>$this</code> &mdash; local evaluation context</li>
+          <li><code>$index</code> &mdash; position of local context in
+          iteration implied by <code>jsselect</code> (analog
+          <code>position()</code> in XSLT)</li>
+          <li><code>this</code> &mdash; current output context (DOM
+          node)</li>
+          <li><code>$top</code> &mdash; initial evaluation context
+          (passed to <code>new JsEvalContext()</code>)</li>
+          <li>properties of local evaluation context</li>
+          <li>variables defined by <code>jsselect</code>,
+          <code>jsvars</code></li>
+          <li>variables defined externally by
+          <code>JsEvalContext.prototype.setVariable()</code></li>
+          <li>globals defined externally by
+          <code>JsEvalContext.setGlobal()</code></li>
+          <li><em>Javascript expressions</em></li>
+        </ul>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>API summary</h1>
+        <ul>
+          <li><code class="prettyprint">new&nbsp;JsEvalContext(data:&nbsp;Object)</code></li>
+          <li><code class="prettyprint">JsEvalContext.prototype.setVariable(
+    name:&nbsp;string,&nbsp;value:&nbsp;Object)</code></li>
+          <li><code class="prettyprint">JsEvalContext.setGlobal(name:&nbsp;string,&nbsp;value:&nbsp;Object)</code></li>
+          <li><code class="prettyprint">jstGetTemplate(name:&nbsp;string):&nbsp;Element</code></li>
+          <li><code class="prettyprint">jstProcess(input:&nbsp;JsEvalContext,&nbsp;output:&nbsp;Element)</code></li>
+        </ul>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Inspiration &amp; alternatives</h1>
+        <ul>
+          <li><b>Ctemplate</b>, <b>PHP</b>, <b>clearsilver</b>:
+          placeholder-structured; may provide server side source of
+          jstemplates.</li>
+
+          <li><b>Zope TAL</b>: inspired attribute embedding.</li>
+
+          <li><b>XSLT</b>: inspired wellformedness guarantees and local
+          evaluation context &mdash; but also the desire for
+          intelligible template language and a concise expression
+          language.</li>
+
+          <li><b>NXSL</b>: earlier used in maps on Safari, like jstemplate
+          but with xpath binding to XML input data.</li>
+        </ul>
+      </div>
+       
+      <div class="slide print" group="content">
+        <h1>Content</h1>
+        <div class="snippet">
+          <div class="label">ctemplate</div>
+          <pre class="prettyprint">
+&lt;b>{{ATTACHMENT_NAME_ESCAPED}}&lt;/b> -
+{{ATTACHMENT_SIZE_ESCAPED}}</pre>
+        </div>
+
+        <div>
+          <blockquote>
+            <b>{{ATTACHMENT_NAME_ESCAPED}}</b> -
+            {{ATTACHMENT_SIZE_ESCAPED}}
+          </blockquote>
+        </div>
+
+        <div class="snippet">
+          <div class="label">clearsilver</div>
+          <pre class="prettyprint">
+&lt;b>&lt;?cs var:html_escape(attachment.name)?>&lt;/b> -
+&lt;?cs var:html_escape(attachment.size)?></pre>
+        </div>
+
+        <div>
+          <blockquote>
+            -
+          </blockquote>
+        </div>
+
+        <div class="snippet">
+          <div class="label">jstemplate</div>
+          <pre class="prettyprint">
+&lt;b jscontent="attachment.name">attachment.html&lt;/b> -
+&lt;span jscontent="attachment.size">100k&lt;/span></pre>
+        </div>
+
+        <div>
+          <blockquote>
+            <b>attachment.html</b> - 100k
+          </blockquote>
+        </div>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Iteration</h1>
+        <div class="snippet">
+          <div class="label">ctemplate</div>
+          <pre class="prettyprint">
+&lt;ul>
+  {{#ITEM_SECTION}}&lt;li>{{ITEM}}&lt;/li>{{/ITEM_SECTION}}
+&lt;ul></pre>
+        </div>
+
+        <div class="snippet">
+          <div class="label">clearsilver</div>
+          <pre class="prettyprint">
+&lt;ul>
+  &lt;?cs each:item = items?>&lt;li>&lt;?cs var:item?>&lt;/li>&lt;?cs /each?>
+&lt;/ul></pre>
+        </div>
+
+        <div class="snippet">
+          <div class="label">jstemplate</div>
+          <pre class="prettyprint">
+&lt;ul>
+  &lt;li jsselect="items" jscontent="$this">&lt;/li>
+&lt;/ul></pre>
+        </div>
+      </div>
+
+      <div class="slide print" group="content" steps="3">
+        <h1>Attribute values</h1>
+        <div class="snippet">
+          <div class="label">ctemplate</div>
+          <pre class="prettyprint">
+&lt;a href="{{URL}}">here&lt;/a></pre>
+        </div>
+
+        <div class="snippet">
+          <div class="label">clearsilver</div>
+          <pre class="prettyprint">
+&lt;a href="&lt;?cs var:url ?>">here&lt;/a></pre>
+        </div>
+
+        <div class="snippet">
+          <div class="label">jstemplate</div>
+          <pre class="prettyprint">
+&lt;a href="#example" jsvalues="href:url">here&lt;/a></pre>
+        </div>
+
+        <div class="snippet" step="1">
+          <div class="label">XSLT</div>
+          <pre class="prettyprint">
+&lt;a>
+  &lt;xsl:text>here&lt;/xsl:text>
+  &lt;xsl:attribute name="href">
+    &lt;xsl:value-of select="@url"/>
+  &lt;/xsl:attribute>
+&lt;/a></pre>
+        </div>
+
+        <div class="snippet" step="2">
+          <div class="label">XSLT</div>
+          <pre class="prettyprint">
+&lt;a href="{@url}">here&lt;/a></pre>
+        </div>
+      </div>
+
+      <div class="slide" group="content">
+        <iframe style="width:99%;height:99%;border:1px solid silver"
+                src="about:blank"
+        xsrc="http://maps.google.com/"></iframe>
+      </div>
+
+      <div class="slide noprint" group="intermission">
+        <div class="banner">
+          <div class="semiopaque"></div>
+          <div class="content">
+            This looks good in practice. But does it work in theory?
+          </div>
+        </div>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Leverage</h1>
+        <div>Reuses existing concepts and their implementations:</div>
+        <ul>
+          <li>HTML syntax as template processing instruction container.</li>
+          <li>Javascript syntax as value expressions.</li>
+          <li>URL syntax for composition expressions.</li>
+          <li>DOM semantics for escaping.</li>
+        </ul>
+        <div>Just <em>adds</em> concepts, doesn't replace:</div>
+        <ul>
+          <li>Processing instruction attributes.</li>
+          <li>Specific value expression values.</li>
+          <li>Processing target expressions.</li>
+          <li>Composition semantics.</li>
+        </ul>
+      </div>
+
+      <div class="slide print" group="content">
+        <h1>Invariants and Guarantees</h1>
+        <div>Robustness:</div>
+        <ul>
+          <li>Processing preserves wellformedness.</li>
+          <li>Composition by <code>transclude</code> preserves
+          wellformedness.</li>
+        </ul>
+        <div>Security:</div>
+        <ul>
+          <li>DOM provides fully correct escaping automatically.</li>
+        </ul>
+        <div>Simplicity:</div>
+        <ul>
+          <li>Input is valid instance of output document type.</li>
+          <li>Output is valid instance of input template type.</li>
+          <li>Processing is idempotent.</li>
+        </ul>
+      </div>
+
+      <div class="slide print" group="content" steps="6">
+        <h1>Conclusion</h1>
+        <div step="1">Yes. <span step="3">It works in practice.</span></div>
+        <div step="2">Yes. <span step="3">It works in theory.</span></div>
+        <div step="4">Specifically, reuse and leverage:</div>
+        <ul step="5">
+          <li>Concepts, syntax, code.</li>
+          <li>Simplicity vs. reuse.</li>
+          <li>Leverage, don't layer.</li>
+        </ul>
+      </div>
+
+      <div class="slide noprint"></div>
+    </div>
+
+    <div class="footer">
+      <div class="author">Robust template processing in Ajax
+      applications &#8212; WWW2008 Conference, 2008-04-24 &#8212; Steffen
+      Meschkat, Google</div>
+      <div class="title"></div>
+    </div>
+  </body>
+</html>
