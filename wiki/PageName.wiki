@@ -1,0 +1,6 @@
+#summary What is JsTemplate?
+
+=What is JsTemplate?=
+JsTemplate (or "Jst" for short) is a javascript library that provides client-side processing and reprocessing of HTML templates. As all template systems do, Jst separates data from its presentation in HTML. Two features set Jst apart from other template systems, however: its processing of templates on the client-side using javascript, and its ability to update the output of a previously processed template to reflect changes in the data. These features make it well suited for use in AJAX applications, which aim to give immediate feedback on the client-side.
+
+If you are a software engineer working on a web application that will use javascript to update the display of data in the browser, Jst might make your job easier. If, for example, you are building an email application that will periodically download new message information, you may want to update the list of messages displayed without getting a new version of the page from the server. While a server-side templating system such as PHP would require you to assemble a new representation of the data on the server, Jst allows you to update the display to reflect new data without having to download any new formatting information.
