@@ -21,12 +21,20 @@ Note that variables defined in either of these ways are distinct from the `JsEva
 So if you have the template
 
 {{{
-<div id="witha"> <div id="Hey" jscontent="this.parentNode.id + this.id + dataProperty + $this.dataProperty + declaredVar"></div> </div> 
+<div id="witha">
+  <div id="Hey" 
+       jscontent="this.parentNode.id + this.id + dataProperty + $this.dataProperty + declaredVar"
+  ></div>
+</div> 
 }}}
 and you process it with the statements
 
 {{{
-var mydata = {dataProperty: 'Nonny'}; var context = new `JsEvalContext`(mydata); context.setVariable('declaredVar', 'Ho'); var template = document.getElementById('witha'); jstProcess(context, template); 
+var mydata = {dataProperty: 'Nonny'};
+var context = new `JsEvalContext`(mydata);
+context.setVariable('declaredVar', 'Ho');
+var template = document.getElementById('witha');
+jstProcess(context, template); 
 }}}
 then the document will display the string `withaHeyNonnyNonnyHo`. [ 03-environ.html ] The values of "id" and "parentNode.id" are available as properties of the current node (accessible through the keyword `this`), the value of `dataProperty` is available (via both a naked reference and the special variable `$this`) because it is defined in the `JsEvalContext`'s data object, and the value of `declaredVar` is available because it is defined in the `JsEvalContext`'s variables.
 
@@ -36,12 +44,19 @@ In the discussion of specific instruction attributes below, the phrase"current n
 This attribute is evaluated as a javascript expression in the current processing environment. The string value of the result then becomes the text content of the current node. So the template
 
 {{{
-<div id="tpl"> Welcome <span jscontent="$this"> (This placeholder name will be replaced by the actual username.) </span> </div> 
+<div id="tpl"> Welcome 
+  <span jscontent="$this">
+   (This placeholder name will be replaced by the actual username.) 
+  </span>
+</div> 
 }}}
 when processed with the javascript statements
 
 {{{
-var tplData = "Joe User"; var input = new `JsEvalContext`(tplData); var output = document.getElementById('tpl'); jstProcess(input, output); 
+var tplData = "Joe User";
+var input = new `JsEvalContext`(tplData);
+var output = document.getElementById('tpl');
+jstProcess(input, output); 
 }}}
 will display
 
@@ -57,12 +72,25 @@ The primary function of JsTemplate is to create mappings between data structures
 For example, imagine that you have the following data object (wrapped in a `JsEvalContext` object constructed with ``JsEvalContext`(tplData)`):
 
 {{{
-var tplData = { username:"Jane User", addresses:[ {location:"111 8th Av.", label:"NYC front door"}, {location:"76 9th Av.", label:"NYC back door"}, {location:"Mountain View", label:"Mothership"} ]}; 
+var tplData = { 
+  username:"Jane User", 
+  addresses:[ {
+    location:"111 8th Av.",
+    label:"NYC front door"
+  }, {
+    location:"76 9th Av.",
+    label:"NYC back door"
+  }, {
+    location:"Mountain View",
+    label:"Mothership"
+  } ]
+}; 
 }}}
 and you use this data in processing the template
 
 {{{
-<div id="tpl"> <span jsselect="username" jscontent="$this"></span>'s Address Book </div> 
+<div id="tpl">
+  <span jsselect="username" jscontent="$this"></span>'s Address Book </div> 
 }}}
 The `jsselect` attribute tells the processor to retrieve the username property of the data object, wrap this value ("Jane User") in a new `JsEvalContext`, and use the new `JsEvalContext` in processing the span element. As a result, `$this` refers to "Jane User" in the context of the span, and the `jscontent` attribute evaluates to "Jane User."
 
@@ -71,7 +99,23 @@ Note that the `jsselect` has to be executed before the `jscontent` in order for 
 What happens if you try to jsselect the array-valued addresses property of the data object? If the result of evaluating a `jsselect` expression is an array, a duplicate of the current template node is created for each item in the array. For each of these duplicate nodes a new `JsEvalContext` will be created to wrap the array item, and the processing environment for the duplicate node now uses this new `JsEvalContext` rather than the original. In other words, `jsselect` operates as a sort of "for each" statement in the case of arrays. So you can expand your address book template to list the addresses in your data object like so:
 
 {{{
-<div id="tpl"> <div id="tpl"> <h1> <span jsselect="username" jscontent="$this">User de Fault</span>'s Address Book </h1> <table cellpadding="5"> <tr><td><h2>Location:</h2></td><td><h2> ;Label:</h2></td></tr> <tr jsselect="addresses"><td jscontent="location"></td><td jscontent="label"></td></tr> </table> </div> 
+<div id="tpl">
+<h1><span jsselect="username" jscontent="$this">User de Fault</span>'s Address Book </h1>
+<table cellpadding="5">
+<tr>
+  <td>
+    <h2>Location:</h2>
+  </td>
+  <td>
+    <h2> ;Label:</h2>
+  </td>
+</tr>
+<tr jsselect="addresses">
+  <td jscontent="location"></td>
+  <td jscontent="label"></td>
+</tr>
+</table>
+</div> 
 }}}
 Processing this template with your Jane User address book data will produce a nice table with a row for each address. [ 05-jsselect.html ] Since the execution of a `jsselect` instruction can change the number of children under a template node, we might worry that if we try to reprocess a template with new data the template will no longer have the structure we want. JsTemplate manages this problem with a couple of tricks. First, whenever a `jsselect` produces duplicate nodes as a result of an array-valued expression, the Jst processor records an index for each node as an attribute of the element. So if the duplicate nodes are reprocessed, the processor can tell that they started out as a single node and will reprocess them as if they are still the single node of the original template. Second, a template node is never entirely removed, even if a jsselect evaluates to null. If a jsselect evaluates to null (or undefined), the current node will be hidden by setting "display='none'", and no further processing will be performed on it. But the node will still be present, and available for future reprocessing.
 
@@ -79,7 +123,19 @@ Processing this template with your Jane User address book data will produce a ni
 The value of the `jsdisplay` attribute is evaluated as a javascript expression. If the result is false, 0, "" or any other javascript value that is true when negated, the CSS display property of the current template node will be set to 'none', rendering it invisible, and no further processing will be done on this node or its children. This Jst instruction is particularly useful for checking for empty content. You might want to display an informative message if a user's address book is empty, for example, rather than just showing them an empty table. The following template will accomplish this goal:
 
 {{{
-<div id="tpl"> <h1> <span jsselect="username" jscontent="$this">User de Fault</span>'s Address Book </h1> <span jsdisplay="addresses.length==0">Address book is empty.</span> <table cellpadding="5" jsdisplay="addresses.length"> <tr><td><h2>Location:</h2></td><td><h2> ;Label:</h2></td></tr> <tr jsselect="addresses"> <td jscontent="location"></td> <td jscontent="label"></td> </tr> </table> </div> 
+<div id="tpl">
+<h1><span jsselect="username" jscontent="$this">User de Fault</span>'s Address Book </h1>
+<span jsdisplay="addresses.length==0">Address book is empty.</span> <table cellpadding="5" jsdisplay="addresses.length">
+<tr>
+  <td><h2>Location:</h2></td>
+  <td><h2> ;Label:</h2></td>
+</tr>
+<tr jsselect="addresses">
+  <td jscontent="location"></td>
+  <td jscontent="label"></td>
+</tr>
+</table>
+</div> 
 }}}
 If the addresses array is empty, the user will see "Address book is empty," but otherwise they will see the table of addresses as usual. [ 06-jsdisplay.html, 07-jsdisplay-empty.html ]
 
@@ -91,13 +147,79 @@ If an element with the given id exists in the document, it is cloned and the clo
 The `transclude` attribute allows for recursion, because a template can be transcluded into itself. This feature can be handy when you want to display hierarchically structured data. If you have a hierarchically structured table of contents, for example, recursive `transclude` statements allow you represent the arbitrarily complex hierarchy with a simple template:
 
 {{{
-// Hierarchical data: var tplData = { title: "JsTemplate", items: [ { title: "Using JsTemplate", items: [ { title: "The JsTemplate Module"}, { title: "Javascript Data"}, { title: "Template HTML"}, { title: "Processing Templates with Javascript Statements"} ]}, { title: "Template Processing Instructions", items: [ { title: "Processing Environment" }, { title: "Instruction Attributes", items: [ {title: "jscontent"}, {title: "jsselect"}, {title: "jsdisplay"}, {title: "transclude"},{title: "jsvalues"}, {title: "jsskip"}, {title: "jseval"} ]} ]} ]}; ... <div id="tpl"> <span jscontent="title">Outline heading</span> <ul jsdisplay="items.length"> <li jsselect="items"> <!--Recursive tranclusion:--> <div transclude="tpl"></div> </li> </ul> </div> 
+// Hierarchical data:
+var tplData = {
+  title: "JsTemplate",
+  items: [ {
+    title: "Using JsTemplate",
+    items: [ { 
+      title: "The JsTemplate Module"
+    }, { 
+      title: "Javascript Data"
+    }, { 
+      title: "Template HTML"
+    }, { 
+      title: "Processing Templates with Javascript Statements"
+    } ]
+  }, {
+    title: "Template Processing Instructions",
+    items: [ { 
+      title: "Processing Environment" 
+    }, { 
+      title: "Instruction Attributes", 
+      items: [ {
+        title: "jscontent"
+      }, {
+        title: "jsselect"
+      }, {
+        title: "jsdisplay"
+      }, {
+        title: "transclude"
+      }, {
+        title: "jsvalues"
+      }, {
+        title: "jsskip"
+      }, {
+        title: "jseval"
+      } ]
+    } ]
+  } ]
+};
+...
+<div id="tpl">
+<span jscontent="title">Outline heading</span>
+<ul jsdisplay="items.length">
+  <li jsselect="items">
+    <!--Recursive tranclusion:-->
+    <div transclude="tpl"></div>
+  </li>
+</ul>
+</div> 
 }}}
 The recursion in this example terminates because eventually it reaches data objects that have no "items" property. When the `jsselect` asks for "items" on one of these leaves, it evaluates to null and no further processing will be performed on that node. Note also that when the node with a `transclude` attribute is replaced with the transcluded node in this example, the replacement node will not have a `transclude` attribute.
 
 How to Use JsTemplate described the use of the `jstGetTemplate` function to process a copy of a template rather than the original template. Templates with recursive transcludes must be cloned in this way before processing. Because of the internal details of Jst processing, a template that contains a recursive reference to itself may be processed incorrectly if the original template is processed directly. The following javascript code will perform the required duplication for the above template:
 {{{
-var PEG_NAME = 'peg'; var TEMPLATE_NAME = 'tpl'; // Called by the body onload handler: function jsinit() { pegElement = domGetElementById(document, PEG_NAME); loadData(pegElement, TEMPLATE_NAME, tplData); } function loadData(peg, templateId, data) { // Get a copy of the template: var templateToProcess = jstGetTemplate(templateId); // Wrap our data in a context object: var processingContext = new JsEvalContext(data); // Process the template jstProcess(processingContext, templateToProcess); // Clear the element to which we'll attach the processed template: peg.innerHTML = ''; // Attach the template: appendChild(peg, templateToProcess); } 
+var PEG_NAME = 'peg';
+var TEMPLATE_NAME = 'tpl';
+// Called by the body onload handler:
+function jsinit() {
+  pegElement = domGetElementById(document, PEG_NAME);
+  loadData(pegElement, TEMPLATE_NAME, tplData);
+}
+
+function loadData(peg, templateId, data) {
+  // Get a copy of the template:
+  var templateToProcess = jstGetTemplate(templateId);
+  // Wrap our data in a context object:
+  var processingContext = new JsEvalContext(data);
+  // Process the template
+  jstProcess(processingContext, templateToProcess);
+  // Clear the element to which we'll attach the processed template: 
+  peg.innerHTML = '';
+  // Attach the template:
+  appendChild(peg, templateToProcess);
+} 
 }}}
 [ 08-transclude.html ]
 
@@ -116,7 +238,28 @@ The `jsvalues` instruction provides a way of making assignments that alter the t
 The `jsvalues` instruction makes a handy bridge between the DOM and Jst data. If you want a built-in event handler attribute like `onclick` to be able to access the currently selected portion of the `JsEvalContext` data, for example, you can use `jsvalues` to copy a reference to the data into an attribute of the current element, where it will be accessible in the `onclick` attribute via `this`. The following example uses this approach to turn our outline into a collapsible outline:
 
 {{{
-// Function called by onclick to record state of closedness and // refresh the outline display function setClosed(jstdata, closedVal) { jstdata.closed = closedVal; loadData(PEG_ELEMENT, TEMPLATE_NAME, tplData); } ... <div id="tpl"> <!-- Links to open and close outline sections: --> <a href="#" jsdisplay="closed" jsvalues=".jstdata:$this" onclick="setClosed(this.jstdata,0)">[Open]</a> <a href="#" jsdisplay="!closed && items.length" jsvalues=".jstdata:$this" onclick="setClosed(this.jstdata,1)"> [Close] </a> <span jscontent="title">Outline heading</span> <ul jsdisplay="items.length && !closed"> <li jsselect="items"> <!--Recursive tranclusion:--> <div transclude="tpl"></div> </li> </ul> </div> 
+// Function called by onclick to record state of closedness and
+// refresh the outline display
+function setClosed(jstdata, closedVal) {
+  jstdata.closed = closedVal;
+  loadData(PEG_ELEMENT, TEMPLATE_NAME, tplData);
+}
+... 
+<div id="tpl"> <!-- Links to open and close outline sections: -->
+<a href="#" jsdisplay="closed" 
+ jsvalues=".jstdata:$this"
+ onclick="setClosed(this.jstdata,0)">[Open]</a>
+<a href="#" jsdisplay="!closed && items.length"
+ jsvalues=".jstdata:$this"
+ onclick="setClosed(this.jstdata,1)">[Close]</a>
+<span jscontent="title">Outline heading</span>
+<ul jsdisplay="items.length && !closed">
+  <li jsselect="items">
+    <!--Recursive tranclusion:-->
+    <div transclude="tpl"></div>
+  </li>
+</ul>
+</div> 
 }}}
 [ 10-jsvalues.html ]
 
@@ -134,12 +277,17 @@ processingContext.setVariable('$counter', counter);
 A `jseval` expression increments the count:
 
 {{{
-<span jscontent="title" jseval="title? $counter.full++: $counter.empty++"> Outline heading </span> 
+<span jscontent="title"
+  jseval="title? $counter.full++: $counter.empty++"> Outline heading </span> 
 }}}
 and then a separate template displays these counts at the bottom of the page:
 
 {{{
-<div id="titleCountTpl"> <p> This outline has <span jscontent="$counter.empty"></span> empty titles and <span jscontent="$counter.full"></span> titles with content. </p> </div> 
+<div id="titleCountTpl">
+<p>This outline has <span jscontent="$counter.empty"></span>
+empty titles and <span jscontent="$counter.full"></span>
+titles with content.</p>
+</div> 
 }}}
 Note that when you close headings the counts change: `jsdisplay` is not only hiding the closed elements, but also aborting the processing of these elements, so that the `jseval` expressions on these elements are never evaluated. [ 11-jseval.html ]
 
